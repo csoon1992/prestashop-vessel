@@ -1,0 +1,53 @@
+version: "2.0"
+services:
+  app:
+    build:
+      context: ./docker/app
+      dockerfile: Dockerfile
+      args:
+        psuid: $PSUID # Forward current executing user id for ps user
+    image: psvessel/app
+    ports:
+      - "${APP_PORT}:80"
+    environment:
+      XDEBUG_HOST: "${XDEBUG_HOST}"
+      WWWUSER: "${WWWUSER}"
+      ADMIN_DIR: "${ADMIN_DIR}"
+      SSH_AUTH_SOCK: /ssh-agent   
+    volumes:
+      - ./prestashop:/var/www/html
+      - $SSH_AUTH_SOCK:/ssh-agent # Forward local machine SSH key to docker
+    networks:
+      - vessel
+  node:
+    build:
+      context: ./docker/node
+      dockerfile: Dockerfile
+      args:
+        uid: "${WWWUSER}"
+    image: psvessel/node
+    user: node
+    volumes:
+      - ./prestashop:/var/www/html
+    networks:
+      - vessel
+  mysql:
+    image: mysql:5.7
+    restart: always
+    env_file:
+      - ".env"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    ports:
+      - "13306:3306"
+    volumes:
+      - "./data/db/mysql:/var/lib/mysql"
+    networks:
+      - vessel
+networks:
+  vessel:
+    driver: "bridge"
+    

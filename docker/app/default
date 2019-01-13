@@ -1,0 +1,12 @@
+ upstream fastcgi_backend {
+     server  unix:/run/php/php7.2-fpm.sock;
+ }
+
+ server {
+    listen 80;
+    server_name _;
+    set $PS_ROOT /var/www/html;
+
+    #include h5bp/basic.conf;
+    include prestashopnginx.conf;
+ }

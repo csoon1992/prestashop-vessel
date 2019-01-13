@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+# Config /etc/php/7.2/mods-available/xdebug.ini
+sed -i "s/xdebug\.remote_host\=.*/xdebug\.remote_host\=$XDEBUG_HOST/g" /etc/php/7.2/mods-available/xdebug.ini
+
+# Run PHP-FPM as current user
+if [ ! -z "$WWWUSER" ]; then
+    sed -i "s/user\ \=.*/user\ \= $WWWUSER/g" /etc/php/7.2/fpm/pool.d/www.conf
+
+    # Set UID of user "prestashop"
+    usermod -u $WWWUSER prestashop
+fi
+
+# Set admin dir
+sed -i "s/###ADMINDIR###/$ADMIN_DIR/g" /etc/nginx/prestashopnginx.conf
+
+# Ensure /.composer exists and is writable
+if [ ! -d /.composer ]; then
+    mkdir /.composer
+fi
+chmod -R ugo+rw /.composer
+
+# Ensure correct write permissions
+chmod a+rw -Rv /var/www/html/config/ /var/www/html/app/config/
+
+echo "Checking admin directory $ADMIN_DIR..."
+#Ensure admin dir exists
+if [ ! -d /var/www/html/$ADMIN_DIR ] && [ -d /var/www/html/admin-dev ]; then
+    echo "Creating $ADMIN_DIR"
+    cp -Rvpf /var/www/html/admin-dev /var/www/html/$ADMIN_DIR
+fi
+
+# Run a command or supervisord
+if [ $# -gt 0 ];then
+    # If we passed a command, run it as current user
+    exec gosu $WWWUSER "$@"
+else
+    # Otherwise start supervisord
+    /usr/bin/supervisord
+fi
