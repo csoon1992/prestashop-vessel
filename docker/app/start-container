@@ -27,7 +27,7 @@ echo "Checking admin directory $ADMIN_DIR..."
 #Ensure admin dir exists
 if [ ! -d /var/www/html/$ADMIN_DIR ] && [ -d /var/www/html/admin-dev ]; then
     echo "Creating $ADMIN_DIR"
-    cp -Rvpf /var/www/html/admin-dev /var/www/html/$ADMIN_DIR
+    mv /var/www/html/admin-dev /var/www/html/$ADMIN_DIR
 fi
 
 # Run a command or supervisord
